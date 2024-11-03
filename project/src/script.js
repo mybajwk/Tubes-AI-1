@@ -341,6 +341,13 @@ function swapRandomElements(cube) {
   ];
 }
 
+function swapElement(cube, x1, y1, z1, x2, y2, z2) {
+  // Swap the elements
+  const temp = cube[z1][y1][x1];
+  cube[z1][y1][x1] = cube[z2][y2][x2];
+  cube[z2][y2][x2] = temp;
+}
+
 let paused = false;
 let canceled = false;
 
@@ -431,8 +438,271 @@ async function simulatedAnnealing() {
   return { bestSolution, bestScore };
 }
 
+function findBestNeighbor(cube) {
+  const n = cube.length;
+  const magicNumber = calculateMagicNumber(n);
+  let currentValue = calculateScore(cube, magicNumber);
+  let bestValue = currentValue;
+  let bestNeighbor = null;
+
+  // Check all possible pairs of positions in the cube
+  for (let i1 = 0; i1 < gridSize; i1++) {
+    for (let j1 = 0; j1 < gridSize; j1++) {
+      for (let k1 = 0; k1 < gridSize; k1++) {
+        for (let i2 = 0; i2 < gridSize; i2++) {
+          for (let j2 = 0; j2 < gridSize; j2++) {
+            for (let k2 = 0; k2 < gridSize; k2++) {
+              // Skip if the positions are the same
+              if (i1 === i2 && j1 === j2 && k1 === k2) {
+                continue;
+              }
+
+              // Swap the two positions
+              swapElement(cube, i1, j1, k1, i2, j2, k2);
+
+              // Calculate objective function after swap
+              let newValue = calculateScore(cube, magicNumber);
+
+              // Record the best neighbor if an improvement is found
+              if (newValue <= bestValue) {
+                bestValue = newValue;
+                bestNeighbor = [
+                  [k1, j1, i1],
+                  [k2, j2, i2],
+                ];
+              }
+              swapElement(cube, i2, j2, k2, i1, j1, k1);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return { bestNeighbor, bestValue };
+}
+
+async function hillClimbSteepest() {
+  let cube = generateRandomData();
+
+  paused = false;
+  canceled = false;
+
+  // Clear data
+  cubeDataSets = [];
+  moveDataSets = [];
+  currentDataIndex = -1;
+
+  cubeDataSets.push(cube);
+  currentDataIndex++;
+  updateCubes();
+
+  const n = cube.length;
+  const magicNumber = calculateMagicNumber(n);
+
+  let currentSolution = cube;
+  let currentScore = calculateScore(currentSolution, magicNumber);
+
+  let bestSolution = currentSolution;
+  let bestScore = currentScore;
+
+  while (true) {
+    if (canceled) {
+      console.log("Simulation canceled.");
+      break;
+    }
+
+    while (paused) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    let { bestNeighbor, bestValue: newScore } =
+      findBestNeighbor(currentSolution);
+
+    if (bestNeighbor) {
+      const [[z1, y1, x1], [z2, y2, x2]] = bestNeighbor;
+      if (newScore >= currentScore) {
+        break;
+      }
+
+      swapElement(currentSolution, x1, y1, z1, x2, y2, z2);
+
+      // Next step
+      currentScore = newScore;
+      bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
+      bestScore = currentScore;
+
+      // Add deep copy to dataset
+      cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
+      moveDataSets.push([
+        [z1, y1, x1],
+        [z2, y2, x2],
+      ]);
+      currentDataIndex = cubeDataSets.length - 1;
+      console.log(bestScore);
+
+      updateCubes();
+
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      console.log("5-second delay complete.");
+    } else {
+      break;
+    }
+  }
+
+  updateCubes();
+
+  return { bestSolution, bestScore };
+}
+async function hillClimbSthocastic() {
+  let cube = generateRandomData();
+
+  paused = false;
+  canceled = false;
+
+  // Clear data
+  cubeDataSets = [];
+  moveDataSets = [];
+  currentDataIndex = -1;
+
+  cubeDataSets.push(cube);
+  currentDataIndex++;
+  updateCubes();
+
+  const n = cube.length;
+  const magicNumber = calculateMagicNumber(n);
+
+  let currentSolution = cube;
+  let currentScore = calculateScore(currentSolution, magicNumber);
+
+  let bestSolution = currentSolution;
+  let bestScore = currentScore;
+
+  while (true) {
+    if (canceled) {
+      console.log("Simulation canceled.");
+      break;
+    }
+
+    while (paused) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    const [[z1, y1, x1], [z2, y2, x2]] = swapRandomElements(currentSolution);
+    const newScore = calculateScore(currentSolution, magicNumber);
+
+    // todo tambahin yang content di stocastic berapa kali itu
+    if (newScore >= currentScore) {
+      break;
+    }
+
+    // Next step
+    currentScore = newScore;
+    bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
+    bestScore = currentScore;
+
+    // Add deep copy to dataset
+    cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
+    moveDataSets.push([
+      [z1, y1, x1],
+      [z2, y2, x2],
+    ]);
+    currentDataIndex = cubeDataSets.length - 1;
+    console.log(bestScore);
+
+    updateCubes();
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    console.log("5-second delay complete.");
+  }
+
+  updateCubes();
+
+  return { bestSolution, bestScore };
+}
+async function hillClimbSideWays() {
+  let cube = generateRandomData();
+
+  paused = false;
+  canceled = false;
+
+  // Clear data
+  cubeDataSets = [];
+  moveDataSets = [];
+  currentDataIndex = -1;
+
+  cubeDataSets.push(cube);
+  currentDataIndex++;
+  updateCubes();
+
+  const n = cube.length;
+  const magicNumber = calculateMagicNumber(n);
+
+  let currentSolution = cube;
+  let currentScore = calculateScore(currentSolution, magicNumber);
+
+  let bestSolution = currentSolution;
+  let bestScore = currentScore;
+
+  while (true) {
+    if (canceled) {
+      console.log("Simulation canceled.");
+      break;
+    }
+
+    while (paused) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    let { bestNeighbor, bestValue: newScore } =
+      findBestNeighbor(currentSolution);
+
+    if (bestNeighbor) {
+      // todo tambahin yang limit sideways berapa kali itu
+      const [[z1, y1, x1], [z2, y2, x2]] = bestNeighbor;
+      if (newScore > currentScore) {
+        break;
+      }
+
+      swapElement(currentSolution, x1, y1, z1, x2, y2, z2);
+
+      // Next step
+      currentScore = newScore;
+      bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
+      bestScore = currentScore;
+
+      // Add deep copy to dataset
+      cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
+      moveDataSets.push([
+        [z1, y1, x1],
+        [z2, y2, x2],
+      ]);
+      currentDataIndex = cubeDataSets.length - 1;
+      console.log(bestScore);
+
+      updateCubes();
+
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      console.log("5-second delay complete.");
+    } else {
+      break;
+    }
+  }
+
+  updateCubes();
+
+  return { bestSolution, bestScore };
+}
+
 document
   .getElementById("simulatedAnnealingButton")
   .addEventListener("click", simulatedAnnealing);
+document
+  .getElementById("hillClimbingButton")
+  .addEventListener("click", hillClimbSteepest);
+document
+  .getElementById("hillClimbingSideWaysButton")
+  .addEventListener("click", hillClimbSthocastic);
+document
+  .getElementById("hillClimbingSthocasticButton")
+  .addEventListener("click", hillClimbSideWays);
 
 // Hill Climb
