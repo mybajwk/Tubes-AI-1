@@ -341,8 +341,22 @@ function swapRandomElements(cube) {
   ];
 }
 
-function simulatedAnnealing() {
+let paused = false;
+let canceled = false;
+
+const pauseBtn = document.getElementById("pauseBtn");
+const resumeBtn = document.getElementById("resumeBtn");
+const cancelBtn = document.getElementById("cancelBtn");
+
+pauseBtn.addEventListener("click", () => (paused = true));
+resumeBtn.addEventListener("click", () => (paused = false));
+cancelBtn.addEventListener("click", () => (canceled = true));
+
+async function simulatedAnnealing() {
   let cube = generateRandomData();
+
+  paused = false;
+  canceled = false;
 
   //   clear data
   cubeDataSets = [];
@@ -364,6 +378,15 @@ function simulatedAnnealing() {
   let bestScore = currentScore;
 
   while (currentTemp > 0.0001) {
+    if (canceled) {
+      console.log("Simulation canceled.");
+      break;
+    }
+
+    while (paused) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
     console.log(currentTemp);
 
     // Swap
@@ -384,7 +407,12 @@ function simulatedAnnealing() {
           [z1, y1, x1],
           [z2, y2, x2],
         ]);
-        currentDataIndex++;
+        currentDataIndex = cubeDataSets.length() - 1;
+
+        updateCubes();
+
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        console.log("5-second delay complete.");
       }
     } else {
       const temp = currentSolution[z1][y1][x1];
