@@ -407,7 +407,7 @@ async function simulatedAnnealing() {
           [z1, y1, x1],
           [z2, y2, x2],
         ]);
-        currentDataIndex = cubeDataSets.length() - 1;
+        currentDataIndex = cubeDataSets.length - 1;
 
         updateCubes();
 
