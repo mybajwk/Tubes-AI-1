@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Three.js Cube Grid with Algorithms</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+      /* Positioning the buttons */
+      #controls {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1;
+      }
+      button {
+        padding: 10px 20px;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <button id="resetButton">Reset</button>
+      <button id="hillClimbingButton">Hill Climbing</button>
+      <button id="simulatedAnnealingButton">Simulated Annealing</button>
+      <button id="geneticAlgorithmButton">Genetic Algorithm</button>
+      <br />
+      <button id="prevButton">Next Left</button>
+      <button id="nextButton">Next Right</button>
+    </div>
+
+    <script src="/dist/bundle.js"></script>
+  </body>
+</html>
