@@ -1020,10 +1020,12 @@ document
 
 document
   .getElementById("geneticAlgorithmButton")
-  .addEventListener("click", () => geneticAlgorithm(100, 1000));
+  .addEventListener("click", () => {
+    runAlgorithm(geneticAlgorithm);
+  });
 
 function generateInitialPopulation(populationSize) {
-  const gridSize = 5; // Fixed grid size of 5 (5x5x5)
+  const gridSize = 5;
   const population = [];
   for (let i = 0; i < populationSize; i++) {
     const individual = generateRandomData(gridSize);
@@ -1080,7 +1082,6 @@ function orderedCrossover(parent1, parent2) {
     child2[i] = flatParent2[i];
   }
 
-  // Fill in the remaining positions from parent2 and parent1 without duplication
   let currentIndex1 = 0;
   let currentIndex2 = 0;
 
@@ -1099,7 +1100,6 @@ function orderedCrossover(parent1, parent2) {
     }
   }
 
-  // Convert back to 3D arrays
   const child3D1 = [];
   const child3D2 = [];
   let index = 0;
@@ -1167,7 +1167,7 @@ function updateVisualization(cubeData) {
   }
 }
 
-async function geneticAlgorithm(populationSize, maxIterations) {
+async function geneticAlgorithm(populationSize = 10, maxIterations = 1000) {
   const gridSize = 5; // Fixed grid size of 5 (5x5x5)
   const magicNumber = calculateMagicNumber(gridSize);
   let population = generateInitialPopulation(populationSize);
@@ -1177,6 +1177,7 @@ async function geneticAlgorithm(populationSize, maxIterations) {
   // Data variables to store iterations
   cubeDataSets = []; // Clear previous data
   currentDataIndex = -1;
+  let scores = [];
 
   for (let iteration = 0; iteration < maxIterations; iteration++) {
     if (canceled) {
@@ -1201,6 +1202,8 @@ async function geneticAlgorithm(populationSize, maxIterations) {
       }
     }
 
+    scores.push(bestScore);
+
     // Save current best state for navigation
     if (
       !cubeDataSets.some(
@@ -1211,15 +1214,15 @@ async function geneticAlgorithm(populationSize, maxIterations) {
       currentDataIndex = cubeDataSets.length - 1;
     }
 
-    updateVisualization(bestSolution); // Display the best state of the population in each iteration
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Add delay for rendering
+    updateVisualization(bestSolution);
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Create new population
     for (let i = 0; i < populationSize; i += 2) {
       const [parent1, parent2] = selectParents(population, fitnessValues);
       let [child1, child2] = orderedCrossover(parent1, parent2);
-      mutate(child1, 0.1); // Mutation rate of 10%
-      mutate(child2, 0.1); // Mutation rate of 10%
+      mutate(child1, 0.1);
+      mutate(child2, 0.1);
 
       population[i] = child1;
       if (i + 1 < populationSize) {
@@ -1228,8 +1231,8 @@ async function geneticAlgorithm(populationSize, maxIterations) {
     }
 
     console.log(`Iteration ${iteration + 1}: Best Score = ${bestScore}`);
-    if (bestScore === 0) break; // Stop if perfect solution found
+    if (bestScore === 0) break;
   }
 
-  return { bestSolution, bestScore };
+  return { bestSolution: bestSolution, bestScore: bestScore, scores: scores };
 }
