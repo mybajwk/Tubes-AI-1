@@ -35,7 +35,7 @@ const gridSize = 5;
 const cubeSize = 1;
 const spacing = 2;
 
-const delayTime = 500;
+const delayTime = 100;
 
 for (let x = 0; x < gridSize; x++) {
   cubes[x] = [];
@@ -419,8 +419,8 @@ async function simulatedAnnealing() {
   let bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
   let bestScore = currentScore;
 
-  let etArray = []; // Array to store ET per iteration
-  let scoresArray = []; // Array to store scores per iteration
+  let etArray = [];
+  let scoresArray = [];
 
   while (currentTemp > 0.0001) {
     if (canceled) {
@@ -437,16 +437,17 @@ async function simulatedAnnealing() {
     const [[z1, y1, x1], [z2, y2, x2]] = swapRandomElements(tempSolution);
     const newScore = calculateScore(tempSolution, magicNumber);
 
-    // Record the score of the current iteration
     scoresArray.push(currentScore);
 
     const deltaScore = newScore - currentScore;
 
     // Calculate ET (exponential acceptance probability)
-    const et = Math.exp(-deltaScore / currentTemp);
-    etArray.push(et); // Store ET value
+    let et = Math.exp(-deltaScore / currentTemp);
+    if (et > 1) {
+      et = 1;
+    }
+    etArray.push(et);
 
-    // Accept the new solution if it is better or based on ET probability
     if (deltaScore < 0 || Math.random() < et) {
       let tempScore = newScore;
       if (tempScore < bestScore) {
@@ -476,12 +477,11 @@ async function simulatedAnnealing() {
 
   updateCubes();
 
-  // Return results, including ET and scores arrays
   return {
     bestSolution: bestSolution,
     bestScore: bestScore,
-    et: etArray, // Return ET per iteration
-    scores: scoresArray, // Return scores per iteration
+    et: etArray,
+    scores: scoresArray,
   };
 }
 
@@ -613,7 +613,7 @@ async function hillClimbStochastic() {
   cubeDataSets = [];
   moveDataSets = [];
   let scores = [];
-  let iterations = 0; // Initialize iteration count
+  let iterations = 0;
   currentDataIndex = -1;
 
   cubeDataSets.push(cube);
@@ -629,7 +629,6 @@ async function hillClimbStochastic() {
   let bestSolution = currentSolution;
   let bestScore = currentScore;
 
-  // Set a maximum number of iterations to prevent infinite loops
   const maxIterations = 200;
 
   while (iterations < maxIterations) {
@@ -648,11 +647,11 @@ async function hillClimbStochastic() {
     // Randomly swap two elements and evaluate new score
     const [[z1, y1, x1], [z2, y2, x2]] = swapRandomElements(currentSolution);
     const newScore = calculateScore(currentSolution, magicNumber);
-    scores.push(newScore); // Record the score
+    scores.push(newScore);
 
     // If the new solution is worse or equal, revert the swap
     if (newScore >= currentScore) {
-      swapElement(currentSolution, x2, y2, z2, x1, y1, z1); // Swap back
+      swapElement(currentSolution, x2, y2, z2, x1, y1, z1);
     } else {
       // Accept the new solution
       currentScore = newScore;
@@ -670,14 +669,12 @@ async function hillClimbStochastic() {
 
       updateCubes();
 
-      // Delay for visualization
       await new Promise((resolve) => setTimeout(resolve, delayTime));
     }
   }
 
   updateCubes();
 
-  // Return scores and iterations for plotting and result display
   return { solution: bestSolution, bestScore: bestScore, scores: scores };
 }
 
@@ -729,7 +726,7 @@ async function hillClimbSideways() {
         console.log(sidewaysCount);
       } else if (newScore < currentScore) {
         currentScore = newScore;
-        sidewaysCount = 0; // Reset sideways count on improvement
+        sidewaysCount = 0;
       } else {
         break;
       }
@@ -740,7 +737,7 @@ async function hillClimbSideways() {
       currentScore = newScore;
       bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
       bestScore = currentScore;
-      scores.push(bestScore); // Record the score
+      scores.push(bestScore);
 
       // Add deep copy to dataset
       cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
@@ -772,7 +769,7 @@ async function HillClimbRandomRestart(restarts = 5) {
   let bestOverallSolution = null;
   let bestOverallScore = Infinity;
   let scores = [];
-  let perRestartIterations = []; // Track the number of iterations for each restart
+  let perRestartIterations = [];
   let iterationCount = 0;
 
   paused = false;
@@ -786,7 +783,6 @@ async function HillClimbRandomRestart(restarts = 5) {
   for (let restart = 0; restart < restarts; restart++) {
     console.log(`Restart #${restart + 1}`);
 
-    // Generate a new random cube for each restart
     let cube = generateRandomData();
     cubeDataSets.push(cube);
     currentDataIndex++;
@@ -797,10 +793,10 @@ async function HillClimbRandomRestart(restarts = 5) {
 
     let currentSolution = cube;
     let currentScore = calculateScore(currentSolution, magicNumber);
-    let bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
+    let bestSolution = JSON.parse(JSON.stringify(currentSolution));
     let bestScore = currentScore;
     let restartScores = [];
-    let iterationCounter = 0; // Counter for iterations in this restart
+    let iterationCounter = 0;
 
     while (true) {
       if (canceled) {
@@ -828,15 +824,13 @@ async function HillClimbRandomRestart(restarts = 5) {
 
         swapElement(currentSolution, x1, y1, z1, x2, y2, z2);
 
-        // Next step
         currentScore = newScore;
-        bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
+        bestSolution = JSON.parse(JSON.stringify(currentSolution));
         bestScore = currentScore;
         restartScores.push(bestScore);
         iterationCounter++;
         iterationCount++;
 
-        // Add deep copy to dataset for animation
         cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
         moveDataSets.push([
           [z1, y1, x1],
@@ -851,13 +845,10 @@ async function HillClimbRandomRestart(restarts = 5) {
       }
     }
 
-    // Store the number of iterations for this restart
     perRestartIterations.push(iterationCounter);
 
-    // Append all iteration scores for plotting
     scores.push(...restartScores);
 
-    // Check if this restart produced the best solution so far
     if (bestScore < bestOverallScore) {
       bestOverallScore = bestScore;
       bestOverallSolution = JSON.parse(JSON.stringify(bestSolution));
@@ -871,7 +862,6 @@ async function HillClimbRandomRestart(restarts = 5) {
 
   updateCubes();
 
-  // Return the final result in the specified format
   return {
     solution: bestOverallSolution,
     bestScore: bestOverallScore,
@@ -905,19 +895,21 @@ async function runAlgorithm(algorithmFunction) {
 
   if (algoResult.perRestartIterations) {
     plotChart(algoResult.scores, algoResult.perRestartIterations);
+  }
+  if (algoResult.et) {
+    plotChart(algoResult.scores, null, algoResult.et);
   } else {
     plotChart(algoResult.scores);
   }
 }
 
-function plotChart(scores, perRestartIterations = null) {
+function plotChart(scores, perRestartIterations = null, etArray = null) {
   const ctx = document.getElementById("objectiveChart").getContext("2d");
 
   let datasets = [];
   let maxIterations = 0;
 
   if (perRestartIterations) {
-    // Generate datasets for each restart
     let startIdx = 0;
     perRestartIterations.forEach((iterations, restartIndex) => {
       const restartScores = scores.slice(startIdx, startIdx + iterations);
@@ -934,13 +926,11 @@ function plotChart(scores, perRestartIterations = null) {
       });
       startIdx += iterations;
 
-      // Update the maximum iteration count
       if (iterations > maxIterations) {
         maxIterations = iterations;
       }
     });
   } else {
-    // Single dataset for non-restart algorithms
     datasets.push({
       label: "Objective Function per Iteration",
       data: scores,
@@ -951,13 +941,11 @@ function plotChart(scores, perRestartIterations = null) {
       pointHoverRadius: 3,
     });
 
-    maxIterations = scores.length; // Set max iterations for non-restart algorithms
+    maxIterations = scores.length;
   }
 
-  // Create labels up to the maximum number of iterations
   const labels = Array.from({ length: maxIterations }, (_, index) => index + 1);
 
-  // Create a new Chart instance
   chartInstance = new Chart(ctx, {
     type: "line",
     data: {
@@ -982,6 +970,49 @@ function plotChart(scores, perRestartIterations = null) {
       },
     },
   });
+
+  // Doesn't plot ET value == 1
+  const filteredEtArray = etArray
+    .map((value, index) => ({ value, index }))
+    .filter((item) => item.value !== 1);
+
+  if (filteredEtArray.length > 0) {
+    const etCtx = document.getElementById("etChart").getContext("2d");
+    new Chart(etCtx, {
+      type: "line",
+      data: {
+        labels: filteredEtArray.map((item) => item.index + 1),
+        datasets: [
+          {
+            label: "ET per Iteration",
+            data: filteredEtArray.map((item) => item.value),
+            borderColor: "rgba(255, 99, 132, 1)",
+            borderWidth: 1,
+            fill: false,
+            pointRadius: 1,
+            pointHoverRadius: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: "Iteration",
+            },
+          },
+          y: {
+            title: {
+              display: true,
+              text: "P Value",
+            },
+          },
+        },
+      },
+    });
+  }
 }
 
 document.getElementById("toggleViewButton").addEventListener("click", () => {
