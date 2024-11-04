@@ -129,6 +129,7 @@ function arraysEqual(a, b) {
 let cubeDataSets = [];
 let moveDataSets = [];
 let currentDataIndex = -1;
+let maxSideways = 50;
 
 function animateCubeMovement(cube, targetPosition, duration = delayTime) {
   // Start and end positions for the animation
@@ -658,7 +659,8 @@ async function hillClimbSthocastic() {
 
   return { bestSolution, bestScore };
 }
-async function hillClimbSideWays() {
+
+async function hillClimbSideways() {
   let cube = generateRandomData();
 
   paused = false;
@@ -682,22 +684,29 @@ async function hillClimbSideWays() {
   let bestSolution = currentSolution;
   let bestScore = currentScore;
 
-  while (true) {
+  let sidewaysCount = 0;
+  console.log(maxSideways)
+  while (sidewaysCount < maxSideways) {
     if (canceled) {
       console.log("Simulation canceled.");
       break;
     }
 
     while (paused) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
-    let { bestNeighbor, bestValue: newScore } =
-      findBestNeighbor(currentSolution);
+
+    let { bestNeighbor, bestValue: newScore } = findBestNeighbor(currentSolution);
 
     if (bestNeighbor) {
-      // todo tambahin yang limit sideways berapa kali itu
       const [[z1, y1, x1], [z2, y2, x2]] = bestNeighbor;
-      if (newScore > currentScore) {
+      if (newScore === currentScore) {
+        sidewaysCount++;
+        console.log(sidewaysCount)
+      } else if (newScore < currentScore) {
+        currentScore = newScore;
+        sidewaysCount = 0; // Reset sideways count on improvement
+      } else {
         break;
       }
 
@@ -722,6 +731,7 @@ async function hillClimbSideWays() {
       await new Promise((resolve) => setTimeout(resolve, delayTime));
       console.log("5-second delay complete.");
     } else {
+      console.log("No better neighbor found, stopping.");
       break;
     }
   }
@@ -819,9 +829,9 @@ document
 //   .addEventListener("click", hillClimbSteepest);
 document
   .getElementById("hillClimbingSideWaysButton")
-  .addEventListener("click", hillClimbSthocastic);
+  .addEventListener("click", hillClimbSideways);
 document
   .getElementById("hillClimbingSthocasticButton")
-  .addEventListener("click", hillClimbSideWays);
+  .addEventListener("click", hillClimbSthocastic);
 
 // Hill Climb
