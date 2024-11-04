@@ -1,4 +1,4 @@
-<h1 align="center">Tugas Besar 1 IF3070 Dasar Inteligensi Artifisial</h1>
+<h1 align="center">Tugas Besar 1 IF3170 Inteligensi Artifisial</h1>
 <h1 align="center">Pencarian Solusi Diagonal Magic Cube dengan Local Search</h1>
 
 ## Deskripsi Program
