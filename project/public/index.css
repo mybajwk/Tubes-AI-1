@@ -13,7 +13,7 @@ body {
 
 #mainContainer {
   display: flex;
-  flex-direction: column; /* Change to column layout */
+  flex-direction: column;
   gap: 20px;
   max-width: 1200px;
   width: 100%;
@@ -21,7 +21,7 @@ body {
 
 #topContainer {
   display: flex;
-  flex-direction: row; /* Horizontal layout for player and algo buttons */
+  flex-direction: row;
   gap: 20px;
 }
 
@@ -29,7 +29,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 70%; /* Adjust as needed */
+  width: 70%;
   max-width: 900px;
   border: 2px solid #444;
   border-radius: 10px;
@@ -60,7 +60,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  width: 30%; /* Adjust width as needed */
+  width: 30%;
 }
 
 #algorithmControls {
@@ -102,14 +102,14 @@ body {
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
   width: 100%;
-  height: auto; /* Ensures it only takes up space as needed */
-  overflow: hidden; /* Prevents any overflow from expanding the container */
+  height: auto;
+  overflow: hidden;
 }
 
 #objectiveChart {
   margin-top: 15px;
   width: 100%;
-  height: auto; /* Adjust to set a reasonable height for the chart */
+  height: auto;
 }
 
 button {

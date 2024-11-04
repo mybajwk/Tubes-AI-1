@@ -593,7 +593,8 @@ async function hillClimbSteepest() {
 
   return { bestSolution, bestScore, scores };
 }
-async function hillClimbSthocastic() {
+
+async function hillClimbStochastic() {
   let cube = generateRandomData();
 
   paused = false;
@@ -602,6 +603,8 @@ async function hillClimbSthocastic() {
   // Clear data
   cubeDataSets = [];
   moveDataSets = [];
+  let scores = [];
+  let iterations = 0; // Initialize iteration count
   currentDataIndex = -1;
 
   cubeDataSets.push(cube);
@@ -617,7 +620,10 @@ async function hillClimbSthocastic() {
   let bestSolution = currentSolution;
   let bestScore = currentScore;
 
-  while (true) {
+  // Set a maximum number of iterations to prevent infinite loops
+  const maxIterations = 200;
+
+  while (iterations < maxIterations) {
     if (canceled) {
       console.log("Simulation canceled.");
       break;
@@ -627,37 +633,40 @@ async function hillClimbSthocastic() {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
+    // Increment iteration count
+    iterations++;
+
+    // Randomly swap two elements and evaluate new score
     const [[z1, y1, x1], [z2, y2, x2]] = swapRandomElements(currentSolution);
     const newScore = calculateScore(currentSolution, magicNumber);
+    scores.push(newScore); // Record the score
 
-    // todo tambahin yang content di stocastic berapa kali itu
+    // If the new solution is worse or equal, revert the swap
     if (newScore >= currentScore) {
-      break;
+      swapElement(currentSolution, x2, y2, z2, x1, y1, z1); // Swap back
+    } else {
+      // Accept the new solution
+      currentScore = newScore;
+      bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
+      bestScore = currentScore;
+
+      // Add deep copy to dataset
+      cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
+      moveDataSets.push([[z1, y1, x1], [z2, y2, x2]]);
+      currentDataIndex = cubeDataSets.length - 1;
+      console.log(`Iteration ${iterations}: Best Score = ${bestScore}`);
+
+      updateCubes();
+
+      // Delay for visualization
+      await new Promise((resolve) => setTimeout(resolve, delayTime));
     }
-
-    // Next step
-    currentScore = newScore;
-    bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
-    bestScore = currentScore;
-
-    // Add deep copy to dataset
-    cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
-    moveDataSets.push([
-      [z1, y1, x1],
-      [z2, y2, x2],
-    ]);
-    currentDataIndex = cubeDataSets.length - 1;
-    console.log(bestScore);
-
-    updateCubes();
-
-    await new Promise((resolve) => setTimeout(resolve, delayTime));
-    console.log("5-second delay complete.");
   }
 
   updateCubes();
 
-  return { bestSolution, bestScore };
+  // Return scores and iterations for plotting and result display
+  return { bestSolution, bestScore, scores };
 }
 
 async function hillClimbSideways() {
@@ -669,6 +678,7 @@ async function hillClimbSideways() {
   // Clear data
   cubeDataSets = [];
   moveDataSets = [];
+  let scores = [];
   currentDataIndex = -1;
 
   cubeDataSets.push(cube);
@@ -685,7 +695,6 @@ async function hillClimbSideways() {
   let bestScore = currentScore;
 
   let sidewaysCount = 0;
-  console.log(maxSideways)
   while (sidewaysCount < maxSideways) {
     if (canceled) {
       console.log("Simulation canceled.");
@@ -693,7 +702,7 @@ async function hillClimbSideways() {
     }
 
     while (paused) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     let { bestNeighbor, bestValue: newScore } = findBestNeighbor(currentSolution);
@@ -702,7 +711,6 @@ async function hillClimbSideways() {
       const [[z1, y1, x1], [z2, y2, x2]] = bestNeighbor;
       if (newScore === currentScore) {
         sidewaysCount++;
-        console.log(sidewaysCount)
       } else if (newScore < currentScore) {
         currentScore = newScore;
         sidewaysCount = 0; // Reset sideways count on improvement
@@ -716,20 +724,18 @@ async function hillClimbSideways() {
       currentScore = newScore;
       bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
       bestScore = currentScore;
+      scores.push(bestScore); // Record the score
 
       // Add deep copy to dataset
       cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
-      moveDataSets.push([
-        [z1, y1, x1],
-        [z2, y2, x2],
-      ]);
+      moveDataSets.push([[z1, y1, x1], [z2, y2, x2]]);
       currentDataIndex = cubeDataSets.length - 1;
       console.log(bestScore);
 
       updateCubes();
 
       await new Promise((resolve) => setTimeout(resolve, delayTime));
-      console.log("5-second delay complete.");
+      console.log("Step complete.");
     } else {
       console.log("No better neighbor found, stopping.");
       break;
@@ -738,7 +744,7 @@ async function hillClimbSideways() {
 
   updateCubes();
 
-  return { bestSolution, bestScore };
+  return { bestSolution, bestScore, scores }; // Return scores for plotting
 }
 
 let chartInstance; // Declare a global variable for the chart instance
@@ -746,6 +752,7 @@ let chartInstance; // Declare a global variable for the chart instance
 async function runAlgorithm(algorithmFunction) {
   document.getElementById("durationValue").textContent = "Processing...";
   document.getElementById("objectiveValue").textContent = "Calculating...";
+  document.getElementById("iterationsValue").textContent = "Calculating...";
 
   // Clear the existing chart instance if it exists
   if (chartInstance) {
@@ -763,6 +770,7 @@ async function runAlgorithm(algorithmFunction) {
   // Display results
   document.getElementById("durationValue").textContent = `${duration} seconds`;
   document.getElementById("objectiveValue").textContent = bestScore;
+  document.getElementById("iterationsValue").textContent = scores.length;
 
   // Plot the chart
   plotChart(scores);
@@ -816,22 +824,18 @@ document.getElementById("toggleViewButton").addEventListener("click", () => {
   );
 });
 
-// Example function to call the algorithm
 document.getElementById("hillClimbingButton").addEventListener("click", () => {
   runAlgorithm(hillClimbSteepest);
+});
+
+document.getElementById("hillClimbingStochasticButton").addEventListener("click", () => {
+  runAlgorithm(hillClimbStochastic);
+});
+
+document.getElementById("hillClimbingSideWaysButton").addEventListener("click", () => {
+  runAlgorithm(hillClimbSideways);
 });
 
 document
   .getElementById("simulatedAnnealingButton")
   .addEventListener("click", simulatedAnnealing);
-// document
-//   .getElementById("hillClimbingButton")
-//   .addEventListener("click", hillClimbSteepest);
-document
-  .getElementById("hillClimbingSideWaysButton")
-  .addEventListener("click", hillClimbSideways);
-document
-  .getElementById("hillClimbingSthocasticButton")
-  .addEventListener("click", hillClimbSthocastic);
-
-// Hill Climb
