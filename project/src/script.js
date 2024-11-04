@@ -35,7 +35,7 @@ const gridSize = 5;
 const cubeSize = 1;
 const spacing = 2;
 
-const delayTime = 100;
+const delayTime = 500;
 
 for (let x = 0; x < gridSize; x++) {
   cubes[x] = [];
@@ -349,19 +349,18 @@ function calculateScore(cube, magicNumber) {
   return totalDeviation;
 }
 
-// simulated annealing
-let initialTemp = 1000;
-let coolingRate = 0.9999;
 function swapRandomElements(cube) {
   const n = cube.length;
+  let x1, y1, z1, x2, y2, z2;
 
-  // Generate random coordinates for two elements
-  const x1 = Math.floor(Math.random() * n);
-  const y1 = Math.floor(Math.random() * n);
-  const z1 = Math.floor(Math.random() * n);
-  const x2 = Math.floor(Math.random() * n);
-  const y2 = Math.floor(Math.random() * n);
-  const z2 = Math.floor(Math.random() * n);
+  do {
+    x1 = Math.floor(Math.random() * n);
+    y1 = Math.floor(Math.random() * n);
+    z1 = Math.floor(Math.random() * n);
+    x2 = Math.floor(Math.random() * n);
+    y2 = Math.floor(Math.random() * n);
+    z2 = Math.floor(Math.random() * n);
+  } while (x1 === x2 && y1 === y2 && z1 === z2);
 
   // Swap the elements
   const temp = cube[z1][y1][x1];
@@ -392,13 +391,16 @@ pauseBtn.addEventListener("click", () => (paused = true));
 resumeBtn.addEventListener("click", () => (paused = false));
 cancelBtn.addEventListener("click", () => (canceled = true));
 
+let initialTemp = 100;
+let coolingRate = 0.9999;
+
 async function simulatedAnnealing() {
   let cube = generateRandomData();
 
   paused = false;
   canceled = false;
 
-  //   clear data
+  // Clear data
   cubeDataSets = [];
   moveDataSets = [];
   currentDataIndex = -1;
@@ -411,13 +413,14 @@ async function simulatedAnnealing() {
   const magicNumber = calculateMagicNumber(n);
 
   let currentTemp = initialTemp;
-  let currentSolution = cube;
+  let currentSolution = JSON.parse(JSON.stringify(cube));
   let currentScore = calculateScore(currentSolution, magicNumber);
 
-  let bestSolution = currentSolution;
+  let bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
   let bestScore = currentScore;
 
-  let pArray = [];
+  let etArray = []; // Array to store ET per iteration
+  let scoresArray = []; // Array to store scores per iteration
 
   while (currentTemp > 0.0001) {
     if (canceled) {
@@ -429,19 +432,27 @@ async function simulatedAnnealing() {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    console.log(currentTemp);
+    // Create a temporary copy of the current solution
+    let tempSolution = JSON.parse(JSON.stringify(currentSolution));
+    const [[z1, y1, x1], [z2, y2, x2]] = swapRandomElements(tempSolution);
+    const newScore = calculateScore(tempSolution, magicNumber);
+    console.log("currnet", currentSolution)
+    console.log("temps", tempSolution)
 
-    // Swap
-    const [[z1, y1, x1], [z2, y2, x2]] = swapRandomElements(currentSolution);
-    const newScore = calculateScore(currentSolution, magicNumber);
+    // Record the score of the current iteration
+    scoresArray.push(currentScore);
 
     const deltaScore = newScore - currentScore;
-    
-    const p = Math.exp(-deltaScore / currentTemp);
-    pArray.push(p);
 
-    if (deltaScore < 0 || Math.random() < Math.exp(-deltaScore / currentTemp)) {
+    // Calculate ET (exponential acceptance probability)
+    const et = Math.exp(-deltaScore / currentTemp);
+    etArray.push(et); // Store ET value
+
+    // Accept the new solution if it is better or based on ET probability
+    if (deltaScore < 0 || Math.random() < et) {
+      currentSolution = JSON.parse(JSON.stringify(tempSolution)); // Accept the new solution
       currentScore = newScore;
+
       if (currentScore < bestScore) {
         bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
         bestScore = currentScore;
@@ -452,19 +463,14 @@ async function simulatedAnnealing() {
           [z1, y1, x1],
           [z2, y2, x2],
         ]);
-        currentDataIndex = cubeDataSets.length - 1;
 
         updateCubes();
+        currentDataIndex = cubeDataSets.length - 1;
+
 
         await new Promise((resolve) => setTimeout(resolve, delayTime));
-        console.log("5-second delay complete.");
       }
-    } else {
-      const temp = currentSolution[z1][y1][x1];
-      currentSolution[z1][y1][x1] = currentSolution[z2][y2][x2];
-      currentSolution[z2][y2][x2] = temp;
     }
-
     // Decrease the temperature
     currentTemp *= coolingRate;
   }
@@ -473,7 +479,13 @@ async function simulatedAnnealing() {
 
   updateCubes();
 
-  return { bestSolution, bestScore };
+  // Return results, including ET and scores arrays
+  return {
+    bestSolution: bestSolution,
+    bestScore: bestScore,
+    et: etArray, // Return ET per iteration
+    scores: scoresArray, // Return scores per iteration
+  };
 }
 
 function findBestNeighbor(cube) {
@@ -591,7 +603,7 @@ async function hillClimbSteepest() {
 
   updateCubes();
 
-  return { bestSolution, bestScore, scores };
+  return { solution: bestSolution, bestScore: bestScore, scores: scores };
 }
 
 async function hillClimbStochastic() {
@@ -652,7 +664,10 @@ async function hillClimbStochastic() {
 
       // Add deep copy to dataset
       cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
-      moveDataSets.push([[z1, y1, x1], [z2, y2, x2]]);
+      moveDataSets.push([
+        [z1, y1, x1],
+        [z2, y2, x2],
+      ]);
       currentDataIndex = cubeDataSets.length - 1;
       console.log(`Iteration ${iterations}: Best Score = ${bestScore}`);
 
@@ -666,7 +681,7 @@ async function hillClimbStochastic() {
   updateCubes();
 
   // Return scores and iterations for plotting and result display
-  return { bestSolution, bestScore, scores };
+  return { solution: bestSolution, bestScore: bestScore, scores: scores };
 }
 
 async function hillClimbSideways() {
@@ -732,7 +747,10 @@ async function hillClimbSideways() {
 
       // Add deep copy to dataset
       cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
-      moveDataSets.push([[z1, y1, x1], [z2, y2, x2]]);
+      moveDataSets.push([
+        [z1, y1, x1],
+        [z2, y2, x2],
+      ]);
       currentDataIndex = cubeDataSets.length - 1;
       console.log(bestScore);
 
@@ -750,57 +768,204 @@ async function hillClimbSideways() {
 
   updateCubes();
 
-  return { bestSolution, bestScore, scores }; // Return scores for plotting
+  return { solution: bestSolution, bestScore: bestScore, scores: scores };
 }
 
-let chartInstance; // Declare a global variable for the chart instance
+async function HillClimbRandomRestart(restarts = 5) {
+  let bestOverallSolution = null;
+  let bestOverallScore = Infinity;
+  let scores = [];
+  let perRestartIterations = []; // Track the number of iterations for each restart
+  let iterationCount = 0;
+
+  paused = false;
+  canceled = false;
+
+  // Clear data
+  cubeDataSets = [];
+  moveDataSets = [];
+  currentDataIndex = -1;
+
+  for (let restart = 0; restart < restarts; restart++) {
+    console.log(`Restart #${restart + 1}`);
+
+    // Generate a new random cube for each restart
+    let cube = generateRandomData();
+    cubeDataSets.push(cube);
+    currentDataIndex++;
+    updateCubes();
+
+    const n = cube.length;
+    const magicNumber = calculateMagicNumber(n);
+
+    let currentSolution = cube;
+    let currentScore = calculateScore(currentSolution, magicNumber);
+    let bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
+    let bestScore = currentScore;
+    let restartScores = [];
+    let iterationCounter = 0; // Counter for iterations in this restart
+
+    while (true) {
+      if (canceled) {
+        console.log("Simulation canceled.");
+        return {
+          solution: bestOverallSolution,
+          bestScore: bestOverallScore,
+          scores,
+          perRestartIterations,
+        };
+      }
+
+      while (paused) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      let { bestNeighbor, bestValue: newScore } =
+        findBestNeighbor(currentSolution);
+
+      if (bestNeighbor) {
+        const [[z1, y1, x1], [z2, y2, x2]] = bestNeighbor;
+        if (newScore >= currentScore) {
+          break;
+        }
+
+        swapElement(currentSolution, x1, y1, z1, x2, y2, z2);
+
+        // Next step
+        currentScore = newScore;
+        bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
+        bestScore = currentScore;
+        restartScores.push(bestScore);
+        iterationCounter++;
+        iterationCount++;
+
+        // Add deep copy to dataset for animation
+        cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
+        moveDataSets.push([
+          [z1, y1, x1],
+          [z2, y2, x2],
+        ]);
+        currentDataIndex = cubeDataSets.length - 1;
+        updateCubes();
+
+        await new Promise((resolve) => setTimeout(resolve, delayTime));
+      } else {
+        break;
+      }
+    }
+
+    // Store the number of iterations for this restart
+    perRestartIterations.push(iterationCounter);
+
+    // Append all iteration scores for plotting
+    scores.push(...restartScores);
+
+    // Check if this restart produced the best solution so far
+    if (bestScore < bestOverallScore) {
+      bestOverallScore = bestScore;
+      bestOverallSolution = JSON.parse(JSON.stringify(bestSolution));
+    }
+
+    console.log(`Best score for restart #${restart + 1}: ${bestScore}`);
+  }
+
+  console.log("Best overall solution found:", bestOverallSolution);
+  console.log("Best overall score:", bestOverallScore);
+
+  updateCubes();
+
+  // Return the final result in the specified format
+  return {
+    solution: bestOverallSolution,
+    bestScore: bestOverallScore,
+    scores: scores,
+    perRestartIterations: perRestartIterations,
+  };
+}
+
+let chartInstance;
 
 async function runAlgorithm(algorithmFunction) {
   document.getElementById("durationValue").textContent = "Processing...";
   document.getElementById("objectiveValue").textContent = "Calculating...";
   document.getElementById("iterationsValue").textContent = "Calculating...";
 
-  // Clear the existing chart instance if it exists
   if (chartInstance) {
     chartInstance.destroy();
-    chartInstance = null; // Reset the chart instance
+    chartInstance = null;
   }
 
-  const startTime = performance.now(); // Start time
+  const startTime = performance.now();
+  const algoResult = await algorithmFunction();
 
-  const { bestSolution, bestScore, scores } = await algorithmFunction(); // Run the algorithm
+  const endTime = performance.now();
+  const duration = ((endTime - startTime) / 1000).toFixed(2);
 
-  const endTime = performance.now(); // End time
-  const duration = ((endTime - startTime) / 1000).toFixed(2); // Calculate duration in seconds
-
-  // Display results
   document.getElementById("durationValue").textContent = `${duration} seconds`;
-  document.getElementById("objectiveValue").textContent = bestScore;
-  document.getElementById("iterationsValue").textContent = scores.length;
+  document.getElementById("objectiveValue").textContent = algoResult.bestScore;
+  document.getElementById("iterationsValue").textContent =
+    algoResult.scores.length;
 
-  // Plot the chart
-  plotChart(scores);
+  if (algoResult.perRestartIterations) {
+    plotChart(algoResult.scores, algoResult.perRestartIterations);
+  } else {
+    plotChart(algoResult.scores);
+  }
 }
 
-function plotChart(scores) {
+function plotChart(scores, perRestartIterations = null) {
   const ctx = document.getElementById("objectiveChart").getContext("2d");
+
+  let datasets = [];
+  let maxIterations = 0;
+
+  if (perRestartIterations) {
+    // Generate datasets for each restart
+    let startIdx = 0;
+    perRestartIterations.forEach((iterations, restartIndex) => {
+      const restartScores = scores.slice(startIdx, startIdx + iterations);
+      datasets.push({
+        label: `Restart ${restartIndex + 1}`,
+        data: restartScores,
+        borderColor: `rgba(${75 + restartIndex * 30}, ${
+          192 - restartIndex * 20
+        }, ${192 - restartIndex * 30}, 1)`,
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 2,
+        pointHoverRadius: 3,
+      });
+      startIdx += iterations;
+
+      // Update the maximum iteration count
+      if (iterations > maxIterations) {
+        maxIterations = iterations;
+      }
+    });
+  } else {
+    // Single dataset for non-restart algorithms
+    datasets.push({
+      label: "Objective Function per Iteration",
+      data: scores,
+      borderColor: "rgba(75, 192, 192, 1)",
+      borderWidth: 2,
+      fill: false,
+      pointRadius: 2,
+      pointHoverRadius: 3,
+    });
+
+    maxIterations = scores.length; // Set max iterations for non-restart algorithms
+  }
+
+  // Create labels up to the maximum number of iterations
+  const labels = Array.from({ length: maxIterations }, (_, index) => index + 1);
 
   // Create a new Chart instance
   chartInstance = new Chart(ctx, {
     type: "line",
     data: {
-      labels: scores.map((_, index) => index + 1),
-      datasets: [
-        {
-          label: "Objective Function per Iteration",
-          data: scores,
-          borderColor: "rgba(75, 192, 192, 1)",
-          borderWidth: 2,
-          fill: false,
-          pointRadius: 2, // Small point size
-          pointHoverRadius: 3, // Slightly larger on hover
-        },
-      ],
+      labels: labels,
+      datasets: datasets,
     },
     options: {
       responsive: true,
@@ -822,9 +987,7 @@ function plotChart(scores) {
   });
 }
 
-// Add toggle button functionality
 document.getElementById("toggleViewButton").addEventListener("click", () => {
-  // Logic to toggle between the start and end state views
   console.log(
     "Toggle button clicked: Implement start/end state view logic here"
   );
@@ -834,30 +997,33 @@ document.getElementById("hillClimbingButton").addEventListener("click", () => {
   runAlgorithm(hillClimbSteepest);
 });
 
-document.getElementById("hillClimbingStochasticButton").addEventListener("click", () => {
-  runAlgorithm(hillClimbStochastic);
-});
+document
+  .getElementById("hillClimbingStochasticButton")
+  .addEventListener("click", () => {
+    runAlgorithm(hillClimbStochastic);
+  });
 
-document.getElementById("hillClimbingSideWaysButton").addEventListener("click", () => {
-  runAlgorithm(hillClimbSideways);
-});
+document
+  .getElementById("hillClimbingSideWaysButton")
+  .addEventListener("click", () => {
+    runAlgorithm(hillClimbSideways);
+  });
+
+document
+  .getElementById("hillClimbingRandomRestartButton")
+  .addEventListener("click", () => {
+    runAlgorithm(HillClimbRandomRestart);
+  });
 
 document
   .getElementById("simulatedAnnealingButton")
-  .addEventListener("click", simulatedAnnealing);
+  .addEventListener("click", () => {
+    runAlgorithm(simulatedAnnealing);
+  });
 
 document
-  .getElementById("hillClimbingButton")
-  .addEventListener("click", hillClimbSteepest);
-document
-  .getElementById("hillClimbingSideWaysButton")
-  .addEventListener("click", hillClimbSideways);
-document
-  .getElementById("hillClimbingStochasticButton")
-  .addEventListener("click", hillClimbStochastic);
-document
   .getElementById("geneticAlgorithmButton")
-  .addEventListener("click", ()=>geneticAlgorithm(100,1000));
+  .addEventListener("click", () => geneticAlgorithm(100, 1000));
 
 function generateInitialPopulation(populationSize) {
   const gridSize = 5; // Fixed grid size of 5 (5x5x5)
@@ -1024,7 +1190,7 @@ async function geneticAlgorithm(populationSize, maxIterations) {
     while (paused) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    
+
     const fitnessValues = population.map((individual) =>
       calculateFitness(individual, magicNumber)
     );
@@ -1039,13 +1205,17 @@ async function geneticAlgorithm(populationSize, maxIterations) {
     }
 
     // Save current best state for navigation
-    if (!cubeDataSets.some(data => JSON.stringify(data) === JSON.stringify(bestSolution))) {
+    if (
+      !cubeDataSets.some(
+        (data) => JSON.stringify(data) === JSON.stringify(bestSolution)
+      )
+    ) {
       cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
       currentDataIndex = cubeDataSets.length - 1;
     }
 
     updateVisualization(bestSolution); // Display the best state of the population in each iteration
-    await new Promise(resolve => setTimeout(resolve, 100)); // Add delay for rendering
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Add delay for rendering
 
     // Create new population
     for (let i = 0; i < populationSize; i += 2) {
