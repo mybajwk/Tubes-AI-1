@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Magic Cube Local Search</title>
+    <link rel="stylesheet" href="index.css" />
+  </head>
+
+  <body>
+    <div id="mainContainer">
+      <div id="topContainer">
+        <div id="playerContainer">
+          <div id="sceneContainer"></div>
+          <div id="controls">
+            <button id="resetButton">Reset</button>
+            <button id="prevButton">Prev State</button>
+            <button id="nextButton">Next State</button>
+            <button id="viewStartButton">View Start State</button>
+            <button id="viewEndButton">View End State</button>
+            <button id="pauseBtn">Pause</button>
+            <button id="resumeBtn">Resume</button>
+            <button id="cancelBtn">Cancel</button>
+          </div>
+        </div>
+
+        <div id="sideContainer">
+          <div id="algorithmControls">
+            <h3>Algorithm Controls</h3>
+            <!-- Algorithm buttons -->
+            <h4>Hill Climbing Steepest Ascent</h4>
+            <button class="algorithmButton" id="hillClimbingButton">
+              Hill Climbing Steepest Accent
+            </button>
+
+            <h4>Hill Climbing Sideways</h4>
+            <label for="sidewaysMoves">Sideways: Max Sideways Moves</label>
+            <input type="number" id="sidewaysMoves" min="1" value="50" />
+            <button class="algorithmButton" id="hillClimbingSideWaysButton">
+              Hill Climbing Sideways
+            </button>
+
+            <h4>Hill Climbing Stochastic</h4>
+            <button class="algorithmButton" id="hillClimbingStochasticButton">
+              Hill Climbing Stochastic
+            </button>
+
+            <h4>Hill Climbing Random Restart</h4>
+            <label for="numRestarts">RR: Number of Restarts</label>
+            <input type="number" id="numRestarts" min="1" value="5" />
+            <button
+              class="algorithmButton"
+              id="hillClimbingRandomRestartButton"
+            >
+              Hill Climbing Random Restart
+            </button>
+
+            <h4>Simulated Annealing</h4>
+            <button class="algorithmButton" id="simulatedAnnealingButton">
+              Simulated Annealing
+            </button>
+
+            <h4>Genetic Algorithm</h4>
+            <label for="populationSize">GA: Population Size</label>
+            <input type="number" id="populationSize" min="1" value="10" />
+            <label for="maxIterationsGA">GA: Iterations</label>
+            <input type="number" id="maxIterationsGA" min="1" value="1000" />
+            <button class="algorithmButton" id="geneticAlgorithmButton">
+              Genetic Algorithm
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="resultContainer">
+        <h3>Algorithm Results</h3>
+        <p id="algoDuration">Duration: <span id="durationValue">N/A</span></p>
+        <p id="finalObjective">
+          Final Objective Function: <span id="objectiveValue">N/A</span>
+        </p>
+        <p id="maxIterations">
+          Iterations: <span id="iterationsValue">N/A</span>
+        </p>
+        <canvas id="objectiveChart"></canvas>
+        <canvas id="etChart"></canvas>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/dist/bundle.js"></script>
+  </body>
+</html>
