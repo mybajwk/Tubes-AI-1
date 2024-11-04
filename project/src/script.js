@@ -242,7 +242,6 @@ function nextLeft() {
 function reset() {
   cubeDataSets = [];
   currentDataIndex = -1;
-  nextRight();
 }
 
 document.getElementById("nextButton").addEventListener("click", nextRight);
@@ -791,6 +790,7 @@ async function HillClimbRandomRestart(restarts = 5) {
 
   for (let restart = 0; restart < restarts; restart++) {
     console.log(`Restart #${restart + 1}`);
+    reset();
 
     let cube = generateRandomData();
     cubeDataSets.push(cube);
@@ -1042,15 +1042,20 @@ document
   });
 
 document
-  .getElementById("hillClimbingSideWaysButton")
+  .getElementById("hillClimbingRandomRestartButton")
   .addEventListener("click", () => {
-    runAlgorithm(hillClimbSideways);
+    const numRestarts = parseInt(document.getElementById("numRestarts").value);
+    runAlgorithm(() => HillClimbRandomRestart(numRestarts));
   });
 
 document
-  .getElementById("hillClimbingRandomRestartButton")
+  .getElementById("hillClimbingSideWaysButton")
   .addEventListener("click", () => {
-    runAlgorithm(HillClimbRandomRestart);
+    const maxSidewaysInput = parseInt(
+      document.getElementById("sidewaysMoves").value
+    );
+    maxSideways = maxSidewaysInput;
+    runAlgorithm(hillClimbSideways);
   });
 
 document
@@ -1062,7 +1067,13 @@ document
 document
   .getElementById("geneticAlgorithmButton")
   .addEventListener("click", () => {
-    runAlgorithm(geneticAlgorithm);
+    const populationSize = parseInt(
+      document.getElementById("populationSize").value
+    );
+    const maxIterations = parseInt(
+      document.getElementById("maxIterationsGA").value
+    );
+    runAlgorithm(() => geneticAlgorithm(populationSize, maxIterations));
   });
 
 function generateInitialPopulation(populationSize) {

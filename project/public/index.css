@@ -36,6 +36,7 @@ body {
   background-color: #222;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
   overflow: hidden;
+  height: min-content;
 }
 
 #sceneContainer {
@@ -86,6 +87,7 @@ body {
 #resultContainer h3 {
   margin-top: 0;
   margin-bottom: 10px;
+  color: #fff;
 }
 
 #resultContainer p {
@@ -110,4 +112,28 @@ button {
 
 button:hover {
   background-color: #777;
+}
+
+#algorithmControls h4,
+h3 {
+  margin: 0;
+  color: #fff;
+}
+
+#algorithmControls button {
+  margin-bottom: 10px;
+}
+
+#algorithmControls label {
+  color: #fff;
+}
+
+#algorithmControls input {
+  padding: 8px;
+  border: 1px solid #555;
+  border-radius: 5px;
+  background-color: #333;
+  color: #ddd;
+  outline: none;
+  transition: border 0.3s;
 }
