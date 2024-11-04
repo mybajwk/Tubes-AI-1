@@ -436,8 +436,6 @@ async function simulatedAnnealing() {
     let tempSolution = JSON.parse(JSON.stringify(currentSolution));
     const [[z1, y1, x1], [z2, y2, x2]] = swapRandomElements(tempSolution);
     const newScore = calculateScore(tempSolution, magicNumber);
-    console.log("currnet", currentSolution)
-    console.log("temps", tempSolution)
 
     // Record the score of the current iteration
     scoresArray.push(currentScore);
@@ -450,10 +448,10 @@ async function simulatedAnnealing() {
 
     // Accept the new solution if it is better or based on ET probability
     if (deltaScore < 0 || Math.random() < et) {
-      currentSolution = JSON.parse(JSON.stringify(tempSolution)); // Accept the new solution
-      currentScore = newScore;
-
-      if (currentScore < bestScore) {
+      let tempScore = newScore;
+      if (tempScore < bestScore) {
+        currentScore = tempScore;
+        currentSolution = JSON.parse(JSON.stringify(tempSolution)); // Accept the new solution
         bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
         bestScore = currentScore;
 
@@ -466,7 +464,6 @@ async function simulatedAnnealing() {
 
         updateCubes();
         currentDataIndex = cubeDataSets.length - 1;
-
 
         await new Promise((resolve) => setTimeout(resolve, delayTime));
       }
