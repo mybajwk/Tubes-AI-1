@@ -646,7 +646,7 @@ async function hillClimbSideways() {
   let bestScore = currentScore;
 
   let sidewaysCount = 0;
-  console.log(maxSideways)
+  console.log(maxSideways);
   while (sidewaysCount < maxSideways) {
     if (canceled) {
       console.log("Simulation canceled.");
@@ -654,16 +654,17 @@ async function hillClimbSideways() {
     }
 
     while (paused) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    let { bestNeighbor, bestValue: newScore } = findBestNeighbor(currentSolution);
+    let { bestNeighbor, bestValue: newScore } =
+      findBestNeighbor(currentSolution);
 
     if (bestNeighbor) {
       const [[z1, y1, x1], [z2, y2, x2]] = bestNeighbor;
       if (newScore === currentScore) {
         sidewaysCount++;
-        console.log(sidewaysCount)
+        console.log(sidewaysCount);
       } else if (newScore < currentScore) {
         currentScore = newScore;
         sidewaysCount = 0; // Reset sideways count on improvement
@@ -688,7 +689,7 @@ async function hillClimbSideways() {
       console.log(bestScore);
 
       updateCubes();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       console.log("100ms delay complete.");
     } else {
       console.log("No better neighbor found, stopping.");
@@ -713,5 +714,214 @@ document
 document
   .getElementById("hillClimbingSthocasticButton")
   .addEventListener("click", hillClimbSthocastic);
+document
+  .getElementById("geneticAlgorithmButton")
+  .addEventListener("click", ()=>geneticAlgorithm(100,1000));
 
-// Hill Climb
+function generateInitialPopulation(populationSize) {
+  const gridSize = 5; // Fixed grid size of 5 (5x5x5)
+  const population = [];
+  for (let i = 0; i < populationSize; i++) {
+    const individual = generateRandomData(gridSize);
+    population.push(individual);
+  }
+  return population;
+}
+
+function calculateFitness(cube, magicNumber) {
+  return calculateScore(cube, magicNumber);
+}
+
+function selectParents(population, fitnessValues) {
+  const totalFitness = fitnessValues.reduce(
+    (sum, value) => sum + 1 / (1 + value),
+    0
+  );
+  const selectionProbability = fitnessValues.map(
+    (value) => 1 / (1 + value) / totalFitness
+  );
+
+  const select = () => {
+    const rand = Math.random();
+    let cumulative = 0;
+    for (let i = 0; i < population.length; i++) {
+      cumulative += selectionProbability[i];
+      if (rand <= cumulative) {
+        return population[i];
+      }
+    }
+    return population[population.length - 1]; // Fallback
+  };
+
+  return [select(), select()];
+}
+
+function orderedCrossover(parent1, parent2) {
+  const gridSize = parent1.length;
+  const totalElements = gridSize * gridSize * gridSize;
+
+  // Flatten the 3D arrays for crossover
+  const flatParent1 = parent1.flat(2);
+  const flatParent2 = parent2.flat(2);
+
+  const start = Math.floor(Math.random() * totalElements);
+  const end = start + Math.floor(Math.random() * (totalElements - start));
+
+  // Create child with a slice from parent1
+  const child1 = new Array(totalElements).fill(null);
+  const child2 = new Array(totalElements).fill(null);
+
+  for (let i = start; i < end; i++) {
+    child1[i] = flatParent1[i];
+    child2[i] = flatParent2[i];
+  }
+
+  // Fill in the remaining positions from parent2 and parent1 without duplication
+  let currentIndex1 = 0;
+  let currentIndex2 = 0;
+
+  for (let i = 0; i < totalElements; i++) {
+    if (!child1.includes(flatParent2[i])) {
+      while (child1[currentIndex1] !== null) {
+        currentIndex1++;
+      }
+      child1[currentIndex1] = flatParent2[i];
+    }
+    if (!child2.includes(flatParent1[i])) {
+      while (child2[currentIndex2] !== null) {
+        currentIndex2++;
+      }
+      child2[currentIndex2] = flatParent1[i];
+    }
+  }
+
+  // Convert back to 3D arrays
+  const child3D1 = [];
+  const child3D2 = [];
+  let index = 0;
+
+  for (let x = 0; x < gridSize; x++) {
+    child3D1[x] = [];
+    child3D2[x] = [];
+    for (let y = 0; y < gridSize; y++) {
+      child3D1[x][y] = [];
+      child3D2[x][y] = [];
+      for (let z = 0; z < gridSize; z++) {
+        child3D1[x][y][z] = child1[index];
+        child3D2[x][y][z] = child2[index];
+        index++;
+      }
+    }
+  }
+
+  return [child3D1, child3D2];
+}
+
+function mutate(cube, mutationRate) {
+  const gridSize = cube.length;
+  if (Math.random() < mutationRate) {
+    const x1 = Math.floor(Math.random() * gridSize);
+    const y1 = Math.floor(Math.random() * gridSize);
+    const z1 = Math.floor(Math.random() * gridSize);
+    const x2 = Math.floor(Math.random() * gridSize);
+    const y2 = Math.floor(Math.random() * gridSize);
+    const z2 = Math.floor(Math.random() * gridSize);
+
+    // Swap elements
+    const temp = cube[x1][y1][z1];
+    cube[x1][y1][z1] = cube[x2][y2][z2];
+    cube[x2][y2][z2] = temp;
+  }
+}
+
+function updateVisualization(cubeData) {
+  for (let x = 0; x < cubeData.length; x++) {
+    for (let y = 0; y < cubeData[x].length; y++) {
+      for (let z = 0; z < cubeData[x][y].length; z++) {
+        const value = cubeData[x][y][z];
+        const cube = cubes[x][y][z];
+
+        // Create canvas for number texture
+        const canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 256;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = "#000000";
+        context.font = "bold 120px Arial";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(value.toString(), canvas.width / 2, canvas.height / 2);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        cube.material.map = texture;
+        cube.material.needsUpdate = true;
+      }
+    }
+  }
+}
+
+async function geneticAlgorithm(populationSize, maxIterations) {
+  const gridSize = 5; // Fixed grid size of 5 (5x5x5)
+  const magicNumber = calculateMagicNumber(gridSize);
+  let population = generateInitialPopulation(populationSize);
+  let bestSolution = population[0];
+  let bestScore = calculateFitness(bestSolution, magicNumber);
+
+  // Data variables to store iterations
+  cubeDataSets = []; // Clear previous data
+  currentDataIndex = -1;
+
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
+    if (canceled) {
+      console.log("Simulation canceled.");
+      break;
+    }
+
+    while (paused) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    
+    const fitnessValues = population.map((individual) =>
+      calculateFitness(individual, magicNumber)
+    );
+
+    // Find the best solution in the current population
+    for (let i = 0; i < populationSize; i++) {
+      const currentScore = fitnessValues[i];
+      if (currentScore < bestScore) {
+        bestSolution = JSON.parse(JSON.stringify(population[i])); // Deep copy
+        bestScore = currentScore;
+      }
+    }
+
+    // Save current best state for navigation
+    if (!cubeDataSets.some(data => JSON.stringify(data) === JSON.stringify(bestSolution))) {
+      cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
+      currentDataIndex = cubeDataSets.length - 1;
+    }
+
+    updateVisualization(bestSolution); // Display the best state of the population in each iteration
+    await new Promise(resolve => setTimeout(resolve, 100)); // Add delay for rendering
+
+    // Create new population
+    for (let i = 0; i < populationSize; i += 2) {
+      const [parent1, parent2] = selectParents(population, fitnessValues);
+      let [child1, child2] = orderedCrossover(parent1, parent2);
+      mutate(child1, 0.1); // Mutation rate of 10%
+      mutate(child2, 0.1); // Mutation rate of 10%
+
+      population[i] = child1;
+      if (i + 1 < populationSize) {
+        population[i + 1] = child2;
+      }
+    }
+
+    console.log(`Iteration ${iteration + 1}: Best Score = ${bestScore}`);
+    if (bestScore === 0) break; // Stop if perfect solution found
+  }
+
+  return { bestSolution, bestScore };
+}
