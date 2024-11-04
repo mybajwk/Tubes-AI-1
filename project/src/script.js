@@ -131,28 +131,35 @@ let moveDataSets = [];
 let currentDataIndex = -1;
 let maxSideways = 50;
 
-// function animateCubeMovement(cube, targetPosition, duration = delayTime) {
-//   // Start and end positions for the animation
-//   const startPosition = cube.position.clone();
-//   const endPosition = targetPosition.clone();
+function animateCubeMovement(cube, targetPosition, duration = delayTime) {
+  // Start and end positions for the animation
+  const startPosition = cube.position.clone();
+  const midPosition = startPosition.clone().lerp(targetPosition.clone(), 0.5);
 
-//   const startTime = Date.now();
+  const startTime = Date.now();
 
-//   function animate() {
-//     const currentTime = Date.now();
-//     const elapsedTime = currentTime - startTime;
-//     const progress = Math.min(elapsedTime / duration, 1);
+  function animate() {
+    const currentTime = Date.now();
+    const elapsedTime = currentTime - startTime;
+    const progress = Math.min(elapsedTime / duration, 1);
 
-//     // Interpolate the cube's position
-//     cube.position.lerpVectors(startPosition, endPosition, progress);
+    if (progress <= 0.5) {
+      cube.position.lerpVectors(startPosition, midPosition, progress * 2);
+    } else {
+      cube.position.lerpVectors(
+        midPosition,
+        startPosition,
+        (progress - 0.5) * 2
+      );
+    }
 
-//     if (progress < 1) {
-//       requestAnimationFrame(animate);
-//     }
-//   }
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    }
+  }
 
-//   animate();
-// }
+  animate();
+}
 
 function updateCubes() {
   if (currentDataIndex >= 0 && currentDataIndex < cubeDataSets.length) {
@@ -174,14 +181,14 @@ function updateCubes() {
 
           if (arraysEqual([x, y, z], moveData?.[0] ?? [-1, -1, -1])) {
             context.fillStyle = "#eb4034"; // Background color
-            // const targetCube =
-            //   cubes[moveData[1][0]][moveData[1][1]][moveData[1][2]];
-            // animateCubeMovement(cube, targetCube.position);
+            const targetCube =
+              cubes[moveData[1][0]][moveData[1][1]][moveData[1][2]];
+            animateCubeMovement(cube, targetCube.position);
           } else if (arraysEqual([x, y, z], moveData?.[1] ?? [-1, -1, -1])) {
             context.fillStyle = "#eb4034"; // Background color
-            // const targetCube =
-            //   cubes[moveData[0][0]][moveData[0][1]][moveData[0][2]];
-            // animateCubeMovement(cube, targetCube.position);
+            const targetCube =
+              cubes[moveData[0][0]][moveData[0][1]][moveData[0][2]];
+            animateCubeMovement(cube, targetCube.position);
           } else {
             context.fillStyle = "#ffffff"; // Background color
           }
@@ -1277,6 +1284,6 @@ document.getElementById("viewStartButton").addEventListener("click", () => {
 });
 
 document.getElementById("viewEndButton").addEventListener("click", () => {
-  currentDataIndex = (cubeDataSets.length - 1);
+  currentDataIndex = cubeDataSets.length - 1;
   updateCubes();
 });
