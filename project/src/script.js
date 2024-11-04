@@ -131,28 +131,28 @@ let moveDataSets = [];
 let currentDataIndex = -1;
 let maxSideways = 50;
 
-function animateCubeMovement(cube, targetPosition, duration = delayTime) {
-  // Start and end positions for the animation
-  const startPosition = cube.position.clone();
-  const endPosition = targetPosition.clone();
+// function animateCubeMovement(cube, targetPosition, duration = delayTime) {
+//   // Start and end positions for the animation
+//   const startPosition = cube.position.clone();
+//   const endPosition = targetPosition.clone();
 
-  const startTime = Date.now();
+//   const startTime = Date.now();
 
-  function animate() {
-    const currentTime = Date.now();
-    const elapsedTime = currentTime - startTime;
-    const progress = Math.min(elapsedTime / duration, 1);
+//   function animate() {
+//     const currentTime = Date.now();
+//     const elapsedTime = currentTime - startTime;
+//     const progress = Math.min(elapsedTime / duration, 1);
 
-    // Interpolate the cube's position
-    cube.position.lerpVectors(startPosition, endPosition, progress);
+//     // Interpolate the cube's position
+//     cube.position.lerpVectors(startPosition, endPosition, progress);
 
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    }
-  }
+//     if (progress < 1) {
+//       requestAnimationFrame(animate);
+//     }
+//   }
 
-  animate();
-}
+//   animate();
+// }
 
 function updateCubes() {
   if (currentDataIndex >= 0 && currentDataIndex < cubeDataSets.length) {
@@ -174,14 +174,14 @@ function updateCubes() {
 
           if (arraysEqual([x, y, z], moveData?.[0] ?? [-1, -1, -1])) {
             context.fillStyle = "#eb4034"; // Background color
-            const targetCube =
-              cubes[moveData[1][0]][moveData[1][1]][moveData[1][2]];
-            animateCubeMovement(cube, targetCube.position);
+            // const targetCube =
+            //   cubes[moveData[1][0]][moveData[1][1]][moveData[1][2]];
+            // animateCubeMovement(cube, targetCube.position);
           } else if (arraysEqual([x, y, z], moveData?.[1] ?? [-1, -1, -1])) {
             context.fillStyle = "#eb4034"; // Background color
-            const targetCube =
-              cubes[moveData[0][0]][moveData[0][1]][moveData[0][2]];
-            animateCubeMovement(cube, targetCube.position);
+            // const targetCube =
+            //   cubes[moveData[0][0]][moveData[0][1]][moveData[0][2]];
+            // animateCubeMovement(cube, targetCube.position);
           } else {
             context.fillStyle = "#ffffff"; // Background color
           }
@@ -216,6 +216,7 @@ function updateCubes() {
 function nextRight() {
   if (currentDataIndex >= cubeDataSets.length - 1) {
     alert("No next data available.");
+    return;
   }
   currentDataIndex++;
   updateCubes();
@@ -230,6 +231,7 @@ function nextLeft() {
     alert("No previous data available.");
   }
 }
+
 function reset() {
   cubeDataSets = [];
   currentDataIndex = -1;
@@ -871,7 +873,7 @@ async function HillClimbRandomRestart(restarts = 5) {
 }
 
 let chartInstance;
-
+let etChartInstance;
 async function runAlgorithm(algorithmFunction) {
   document.getElementById("durationValue").textContent = "Processing...";
   document.getElementById("objectiveValue").textContent = "Calculating...";
@@ -880,6 +882,11 @@ async function runAlgorithm(algorithmFunction) {
   if (chartInstance) {
     chartInstance.destroy();
     chartInstance = null;
+  }
+
+  if (etChartInstance) {
+    etChartInstance.destroy();
+    etChartInstance = null;
   }
 
   const startTime = performance.now();
@@ -971,55 +978,51 @@ function plotChart(scores, perRestartIterations = null, etArray = null) {
     },
   });
 
-  // Doesn't plot ET value == 1
-  const filteredEtArray = etArray
-    .map((value, index) => ({ value, index }))
-    .filter((item) => item.value !== 1);
+  if (etArray) {
+    const filteredEtArray = etArray
+      .map((value, index) => ({ value, index }))
+      .filter((item) => item.value !== 1);
 
-  if (filteredEtArray.length > 0) {
-    const etCtx = document.getElementById("etChart").getContext("2d");
-    new Chart(etCtx, {
-      type: "line",
-      data: {
-        labels: filteredEtArray.map((item) => item.index + 1),
-        datasets: [
-          {
-            label: "ET per Iteration",
-            data: filteredEtArray.map((item) => item.value),
-            borderColor: "rgba(255, 99, 132, 1)",
-            borderWidth: 1,
-            fill: false,
-            pointRadius: 1,
-            pointHoverRadius: 2,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            title: {
-              display: true,
-              text: "Iteration",
+    if (filteredEtArray.length > 0) {
+      const etCtx = document.getElementById("etChart").getContext("2d");
+
+      etChartInstance = new Chart(etCtx, {
+        type: "line",
+        data: {
+          labels: filteredEtArray.map((item) => item.index + 1),
+          datasets: [
+            {
+              label: "ET per Iteration",
+              data: filteredEtArray.map((item) => item.value),
+              borderColor: "rgba(255, 99, 132, 1)",
+              borderWidth: 1,
+              fill: false,
+              pointRadius: 1,
+              pointHoverRadius: 2,
             },
-          },
-          y: {
-            title: {
-              display: true,
-              text: "P Value",
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: "Iteration",
+              },
+            },
+            y: {
+              title: {
+                display: true,
+                text: "P Value",
+              },
             },
           },
         },
-      },
-    });
+      });
+    }
   }
 }
-
-document.getElementById("toggleViewButton").addEventListener("click", () => {
-  console.log(
-    "Toggle button clicked: Implement start/end state view logic here"
-  );
-});
 
 document.getElementById("hillClimbingButton").addEventListener("click", () => {
   runAlgorithm(hillClimbSteepest);
@@ -1267,3 +1270,13 @@ async function geneticAlgorithm(populationSize = 10, maxIterations = 1000) {
 
   return { bestSolution: bestSolution, bestScore: bestScore, scores: scores };
 }
+
+document.getElementById("viewStartButton").addEventListener("click", () => {
+  currentDataIndex = 1;
+  updateCubes();
+});
+
+document.getElementById("viewEndButton").addEventListener("click", () => {
+  currentDataIndex = (cubeDataSets.length - 1);
+  updateCubes();
+});
