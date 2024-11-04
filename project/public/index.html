@@ -1,51 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Three.js Cube Grid with Algorithms</title>
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-      }
-      canvas {
-        display: block;
-      }
-      /* Positioning the buttons */
-      #controls {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        z-index: 1;
-      }
-      button {
-        padding: 10px 20px;
-        margin-right: 5px;
-        margin-bottom: 5px;
-        font-size: 16px;
-        cursor: pointer;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="controls">
-      <button id="resetButton">Reset</button>
-      <button id="hillClimbingButton">Hill Climbing</button>
-      <button id="hillClimbingSideWaysButton">Hill Climbing Side Ways</button>
-      <button id="hillClimbingSthocasticButton">
-        Hill Climbing Sthocastic
-      </button>
-      <button id="simulatedAnnealingButton">Simulated Annealing</button>
-      <button id="geneticAlgorithmButton">Genetic Algorithm</button>
-      <br />
-      <button id="prevButton">Next Left</button>
-      <button id="nextButton">Next Right</button>
 
-      <button id="pauseBtn">Pause</button>
-      <button id="resumeBtn">Resume</button>
-      <button id="cancelBtn">Cancel</button>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Magic Cube Local Search</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+  <div id="mainContainer">
+    <div id="topContainer">
+      <div id="playerContainer">
+        <div id="sceneContainer"></div>
+        <div id="controls">
+          <button id="resetButton">Reset</button>
+          <button id="prevButton">Prev State</button>
+          <button id="nextButton">Next State</button>
+          <button id="toggleViewButton">Toggle Start/End State</button>
+          <button id="pauseBtn">Pause</button>
+          <button id="resumeBtn">Resume</button>
+          <button id="cancelBtn">Cancel</button>
+        </div>
+      </div>
+
+      <div id="sideContainer">
+        <div id="algorithmControls">
+          <button id="hillClimbingButton">Hill Climbing</button>
+          <button id="hillClimbingSideWaysButton">Hill Climbing Side Ways</button>
+          <button id="hillClimbingSthocasticButton">Hill Climbing Stochastic</button>
+          <button id="simulatedAnnealingButton">Simulated Annealing</button>
+          <button id="geneticAlgorithmButton">Genetic Algorithm</button>
+        </div>
+      </div>
     </div>
 
-    <script src="/dist/bundle.js"></script>
-  </body>
+    <div id="resultContainer">
+      <h3>Algorithm Results</h3>
+      <p id="algoDuration">Duration: <span id="durationValue">N/A</span></p>
+      <p id="finalObjective">Final Objective Function: <span id="objectiveValue">N/A</span></p>
+      <canvas id="objectiveChart"></canvas>
+    </div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/dist/bundle.js"></script>
+</body>
+
 </html>

@@ -3,21 +3,25 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 // Set up scene, camera, renderer
 const scene = new THREE.Scene();
+const sceneContainer = document.getElementById("sceneContainer");
 const camera = new THREE.PerspectiveCamera(
   75,
-  window.innerWidth / window.innerHeight,
+  sceneContainer.clientWidth / sceneContainer.clientHeight,
   0.1,
   1000
 );
-
+camera.position.set(30, 30, 30);
+camera.lookAt(0, 0, 0);
+console.log("Initial camera position:", camera.position);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+renderer.setSize(sceneContainer.clientWidth, sceneContainer.clientHeight);
+sceneContainer.appendChild(renderer.domElement);
 
 // Add OrbitControls for interactive rotation and zooming
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.1;
+controls.update();
 
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -30,6 +34,8 @@ const cubes = [];
 const gridSize = 5;
 const cubeSize = 1;
 const spacing = 2;
+
+const delayTime = 100;
 
 for (let x = 0; x < gridSize; x++) {
   cubes[x] = [];
@@ -124,14 +130,33 @@ let cubeDataSets = [];
 let moveDataSets = [];
 let currentDataIndex = -1;
 
-// Function to update cubes with data at currentDataIndex
+function animateCubeMovement(cube, targetPosition, duration = delayTime) {
+  // Start and end positions for the animation
+  const startPosition = cube.position.clone();
+  const endPosition = targetPosition.clone();
+
+  const startTime = Date.now();
+
+  function animate() {
+    const currentTime = Date.now();
+    const elapsedTime = currentTime - startTime;
+    const progress = Math.min(elapsedTime / duration, 1);
+
+    // Interpolate the cube's position
+    cube.position.lerpVectors(startPosition, endPosition, progress);
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    }
+  }
+
+  animate();
+}
+
 function updateCubes() {
   if (currentDataIndex >= 0 && currentDataIndex < cubeDataSets.length) {
     const cubeData = cubeDataSets[currentDataIndex];
     const moveData = moveDataSets?.[currentDataIndex - 1] ?? [-1, -1, -1];
-
-    console.log(cubeData);
-    console.log(cubeDataSets[currentDataIndex - 1]);
 
     // Update cubes based on data
     for (let x = 0; x < gridSize; x++) {
@@ -148,11 +173,18 @@ function updateCubes() {
 
           if (arraysEqual([x, y, z], moveData?.[0] ?? [-1, -1, -1])) {
             context.fillStyle = "#eb4034"; // Background color
+            const targetCube =
+              cubes[moveData[1][0]][moveData[1][1]][moveData[1][2]];
+            animateCubeMovement(cube, targetCube.position);
           } else if (arraysEqual([x, y, z], moveData?.[1] ?? [-1, -1, -1])) {
             context.fillStyle = "#eb4034"; // Background color
+            const targetCube =
+              cubes[moveData[0][0]][moveData[0][1]][moveData[0][2]];
+            animateCubeMovement(cube, targetCube.position);
           } else {
             context.fillStyle = "#ffffff"; // Background color
           }
+
           context.fillRect(0, 0, canvas.width, canvas.height);
           context.fillStyle = "#000000"; // Text color
           context.font = "bold 120px Arial";
@@ -384,6 +416,8 @@ async function simulatedAnnealing() {
   let bestSolution = currentSolution;
   let bestScore = currentScore;
 
+  let pArray = [];
+
   while (currentTemp > 0.0001) {
     if (canceled) {
       console.log("Simulation canceled.");
@@ -401,6 +435,9 @@ async function simulatedAnnealing() {
     const newScore = calculateScore(currentSolution, magicNumber);
 
     const deltaScore = newScore - currentScore;
+    
+    const p = Math.exp(-deltaScore / currentTemp);
+    pArray.push(p);
 
     if (deltaScore < 0 || Math.random() < Math.exp(-deltaScore / currentTemp)) {
       currentScore = newScore;
@@ -418,7 +455,7 @@ async function simulatedAnnealing() {
 
         updateCubes();
 
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, delayTime));
         console.log("5-second delay complete.");
       }
     } else {
@@ -491,6 +528,7 @@ async function hillClimbSteepest() {
   // Clear data
   cubeDataSets = [];
   moveDataSets = [];
+  let scores = [];
   currentDataIndex = -1;
 
   cubeDataSets.push(cube);
@@ -530,6 +568,7 @@ async function hillClimbSteepest() {
       currentScore = newScore;
       bestSolution = JSON.parse(JSON.stringify(currentSolution)); // Deep copy
       bestScore = currentScore;
+      scores.push(bestScore);
 
       // Add deep copy to dataset
       cubeDataSets.push(JSON.parse(JSON.stringify(bestSolution)));
@@ -542,7 +581,7 @@ async function hillClimbSteepest() {
 
       updateCubes();
 
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, delayTime));
       console.log("5-second delay complete.");
     } else {
       break;
@@ -551,7 +590,7 @@ async function hillClimbSteepest() {
 
   updateCubes();
 
-  return { bestSolution, bestScore };
+  return { bestSolution, bestScore, scores };
 }
 async function hillClimbSthocastic() {
   let cube = generateRandomData();
@@ -611,7 +650,7 @@ async function hillClimbSthocastic() {
 
     updateCubes();
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await new Promise((resolve) => setTimeout(resolve, delayTime));
     console.log("5-second delay complete.");
   }
 
@@ -680,7 +719,7 @@ async function hillClimbSideWays() {
 
       updateCubes();
 
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, delayTime));
       console.log("5-second delay complete.");
     } else {
       break;
@@ -692,12 +731,92 @@ async function hillClimbSideWays() {
   return { bestSolution, bestScore };
 }
 
+let chartInstance; // Declare a global variable for the chart instance
+
+async function runAlgorithm(algorithmFunction) {
+  document.getElementById("durationValue").textContent = "Processing...";
+  document.getElementById("objectiveValue").textContent = "Calculating...";
+
+  // Clear the existing chart instance if it exists
+  if (chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null; // Reset the chart instance
+  }
+
+  const startTime = performance.now(); // Start time
+
+  const { bestSolution, bestScore, scores } = await algorithmFunction(); // Run the algorithm
+
+  const endTime = performance.now(); // End time
+  const duration = ((endTime - startTime) / 1000).toFixed(2); // Calculate duration in seconds
+
+  // Display results
+  document.getElementById("durationValue").textContent = `${duration} seconds`;
+  document.getElementById("objectiveValue").textContent = bestScore;
+
+  // Plot the chart
+  plotChart(scores);
+}
+
+function plotChart(scores) {
+  const ctx = document.getElementById("objectiveChart").getContext("2d");
+
+  // Create a new Chart instance
+  chartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: scores.map((_, index) => index + 1),
+      datasets: [
+        {
+          label: "Objective Function per Iteration",
+          data: scores,
+          borderColor: "rgba(75, 192, 192, 1)",
+          borderWidth: 2,
+          fill: false,
+          pointRadius: 2, // Small point size
+          pointHoverRadius: 3, // Slightly larger on hover
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: "Iteration",
+          },
+        },
+        y: {
+          title: {
+            display: true,
+            text: "Objective Function Value",
+          },
+        },
+      },
+    },
+  });
+}
+
+// Add toggle button functionality
+document.getElementById("toggleViewButton").addEventListener("click", () => {
+  // Logic to toggle between the start and end state views
+  console.log(
+    "Toggle button clicked: Implement start/end state view logic here"
+  );
+});
+
+// Example function to call the algorithm
+document.getElementById("hillClimbingButton").addEventListener("click", () => {
+  runAlgorithm(hillClimbSteepest);
+});
+
 document
   .getElementById("simulatedAnnealingButton")
   .addEventListener("click", simulatedAnnealing);
-document
-  .getElementById("hillClimbingButton")
-  .addEventListener("click", hillClimbSteepest);
+// document
+//   .getElementById("hillClimbingButton")
+//   .addEventListener("click", hillClimbSteepest);
 document
   .getElementById("hillClimbingSideWaysButton")
   .addEventListener("click", hillClimbSthocastic);
