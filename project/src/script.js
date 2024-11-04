@@ -351,7 +351,7 @@ function calculateScore(cube, magicNumber) {
 
 // simulated annealing
 let initialTemp = 1000;
-let coolingRate = 0.999;
+let coolingRate = 0.9999;
 function swapRandomElements(cube) {
   const n = cube.length;
 
@@ -853,8 +853,8 @@ document
   .getElementById("hillClimbingSideWaysButton")
   .addEventListener("click", hillClimbSideways);
 document
-  .getElementById("hillClimbingSthocasticButton")
-  .addEventListener("click", hillClimbSthocastic);
+  .getElementById("hillClimbingStochasticButton")
+  .addEventListener("click", hillClimbStochastic);
 document
   .getElementById("geneticAlgorithmButton")
   .addEventListener("click", ()=>geneticAlgorithm(100,1000));
